@@ -1,6 +1,5 @@
 import csv
 from pathlib import Path
-# from functools import reduce # NICHT VERWENDET FÜR V1.0 (Imperativ)
 import time 
 
 # --- DEFINITION DER EXAKTEN SCHLÜSSEL AUS DER CSV ---
@@ -29,16 +28,11 @@ def format_number(n):
     """Formatiert eine Zahl mit Tausender-Trennzeichen (z.B. 12'500)"""
     return f"{n:,.0f}".replace(",", "'")
 
-
-# --- 1. DATENLADEN ---
+# --- DATENLADEN ---
 
 def lade_csv_daten(dateipfad_str, jahr=None):
-    """
-    Lädt die CSV-Datei und konvertiert Zahlen in Integer. 
-    """
     daten_liste = []
     dateipfad = Path(dateipfad_str)
-    
     if not dateipfad.exists():
         return []
 
@@ -48,7 +42,7 @@ def lade_csv_daten(dateipfad_str, jahr=None):
             delimiter = ',' if inhalt.count(',') > inhalt.count(';') else ';'
             datei.seek(0)
             
-            # Überspringe die ersten 3 Metadaten-Zeilen damit es klappt
+            # Überspringe die ersten 3 Metadaten-Zeilen
             next(datei) 
             next(datei) 
             next(datei) 
@@ -82,10 +76,10 @@ def lade_csv_daten(dateipfad_str, jahr=None):
 
 
 # ----------------------------------------------------------------------------------
-# DIE 7 FUNKTIONEN (MAP / FILTER / REDUCE)
+# DIE 7 ANFORDERUNGEN (Funktionen 1 bis 7)
 # ----------------------------------------------------------------------------------
 
-# 1. FILTER: filterSevereOffenses(minCases) - Imperativ
+# F1: FILTER: filterSevereOffenses(minCases)
 def filterSevereOffenses(delikte_liste, minCases):
     resultierende_delikte = []
     key = bereinige_schluessel(KEY_STRAFTATEN) 
@@ -95,7 +89,7 @@ def filterSevereOffenses(delikte_liste, minCases):
     return resultierende_delikte
 
 
-# 2. MAP: mapCalculateYouthShare() - Imperativ
+# F2: MAP: mapCalculateYouthShare()
 def mapCalculateYouthShare(delikte_liste):
     ergebnis_liste = []
     key_total = bereinige_schluessel(KEY_TOTAL_BESCHULDIGTE)
@@ -122,7 +116,7 @@ def mapCalculateYouthShare(delikte_liste):
     return ergebnis_liste
 
 
-# 3. FILTER: filterByHighYouthInvolvement(minPercentage) - Imperativ
+# F3: FILTER: filterByHighYouthInvolvement(minPercentage)
 def filterByHighYouthInvolvement(delikte_liste, minPercentage):
     delikte_mit_hohem_jugendanteil = []
     for delikt in delikte_liste:
@@ -131,7 +125,7 @@ def filterByHighYouthInvolvement(delikte_liste, minPercentage):
     return delikte_mit_hohem_jugendanteil
 
 
-# 4. REDUCE/FILTER: reduceOffensesByHighMaleShare() - Imperativ
+# F4: REDUCE/FILTER: reduceOffensesByHighMaleShare()
 def reduceOffensesByHighMaleShare(delikte_liste, minRatio=10.0):
     delikte_maennlich_dominiert = []
     key_maenner = bereinige_schluessel(KEY_MAENNLICH)
@@ -154,7 +148,7 @@ def reduceOffensesByHighMaleShare(delikte_liste, minRatio=10.0):
     return delikte_maennlich_dominiert
 
 
-# 5. REDUCE: reduceSumByAgeGroup(ageGroup) - Imperativ
+# F5: REDUCE: reduceSumByAgeGroup(ageGroup)
 def reduceSumByAgeGroup(delikte_liste, ageGroupKey):
     gesamt_summe = 0
     key = bereinige_schluessel(ageGroupKey)
@@ -165,7 +159,7 @@ def reduceSumByAgeGroup(delikte_liste, ageGroupKey):
     return gesamt_summe
 
 
-# 6. MAP: mapNormalizeSwissRatio() - Imperativ
+# F6: MAP: mapNormalizeSwissRatio()
 def mapNormalizeSwissRatio(delikte_liste):
     ergebnis_liste = []
     key_total = bereinige_schluessel(KEY_TOTAL_BESCHULDIGTE)
@@ -183,11 +177,10 @@ def mapNormalizeSwissRatio(delikte_liste):
     return ergebnis_liste
 
 
-# 7. REDUCE: reduceTotalCasesOverTime(startYear, endYear) - Imperativ
+# F7: REDUCE: reduceTotalCasesOverTime(startYear, endYear)
 def reduceTotalCasesOverTime(alle_daten):
     jahres_summen = {}
     
-    # 1. Sammle Summen pro Jahr
     for delikt in alle_daten:
         jahr = delikt.get(KEY_JAHR)
         straftaten = delikt.get(bereinige_schluessel(KEY_STRAFTATEN), 0)
@@ -198,7 +191,6 @@ def reduceTotalCasesOverTime(alle_daten):
             else:
                 jahres_summen[jahr] = straftaten
             
-    # 2. Sortiere und berechne die prozentuale Veränderung
     sorted_years = sorted(jahres_summen.keys())
     ergebnis_liste = []
     
@@ -223,7 +215,7 @@ def reduceTotalCasesOverTime(alle_daten):
 
 
 # ----------------------------------------------------------------------------------
-# HAUPT-REPORT-FUNKTION (Imperativ)
+# HAUPT-REPORT-FUNKTION
 # ----------------------------------------------------------------------------------
 
 def generate_report(daten_2024, daten_gesamt):
@@ -253,34 +245,38 @@ def generate_report(daten_2024, daten_gesamt):
         summe = format_number(jahr_daten.get('Gesamtzahl Straftaten'))
         veraenderung = jahr_daten.get('Veränderung zum Vorjahr')
         
-        report_output += f"\n{jahr:<4} | {summe:>27} | {veraenderung:>22}"
+        # Wichtig: Die Formatierung muss die genauen Leerzeichen (Space ' ') und den Hochkomma-Separator (') nutzen.
+        # Hier wird die alte Formatierung beibehalten, wie in Ihrem Output gezeigt.
+        report_output += f"\n{jahr:<4} | {summe:>27} | {veraenderung:>22}" 
 
     report_output += "\nBEOBACHTUNGEN: Die Fallzahlen sind über den gesamten Zeitraum signifikant gestiegen."
     
     # --------------------------------------------------
-    # 2. HÖCHSTE RELATIVE BETEILIGUNG DER SCHWEIZER (F6)
+    # 2. HÖCHSTE RELATIVE BETEILIGUNG DER MINDERJÄHRIGEN (F2/F6)
     # --------------------------------------------------
     
-    daten_mit_ch_anteil = mapNormalizeSwissRatio(daten_2024[:]) 
+    # F2 aufrufen, um die Kennzahl 'Jugendanteil_Prozent' zu erhalten.
+    daten_mit_jugend_anteil = mapCalculateYouthShare(daten_2024[:]) 
     
-    # Imperatives Sortieren und Top 5 auswählen
-    top_schweizer = sorted(
-        daten_mit_ch_anteil, 
-        key=lambda x: x.get('Schweizer_Anteil_Prozent', 0), 
+    # Sortieren und Top 5 auswählen (höchster Anteil zuerst)
+    top_jugend = sorted(
+        daten_mit_jugend_anteil, 
+        key=lambda x: x.get('Jugendanteil_Prozent', 0), 
         reverse=True
     )
-    top_schweizer_5 = top_schweizer[:5]
+    top_jugend_5 = top_jugend[:5]
     
     report_output += "\n\n----------------------------------------------"
-    report_output += "\n2. HÖCHSTE RELATIVE BETEILIGUNG DER SCHWEIZER (Funktion 6)"
+    report_output += "\n2. HÖCHSTE RELATIVE BETEILIGUNG DER MINDERJÄHRIGEN (Funktion 6)" 
     report_output += "\n--------------------------------------------------"
-    report_output += "\nDiese Liste zeigt den Anteil beschuldigter Schweizer Bürger pro Delikt (Top 5 nach Anteil):"
-    report_output += "\nDeliktkategorie                          | Anteil Schweizer Bürger"
+    report_output += "\nDiese Liste zeigt den Anteil beschuldigter Personen unter 25 Jahren pro Delikt (Top 5 nach Anteil):"
+    report_output += "\nDeliktkategorie                          | Anteil unter 25-Jährigen"
     report_output += "\n-----------------------------------------|------------------------"
     
-    for delikt in top_schweizer_5:
+    for delikt in top_jugend_5:
         delikt_name = delikt.get(bereinige_schluessel(KEY_DELIKT), 'N/A')
-        anteil = f"{delikt.get('Schweizer_Anteil_Prozent', 0.0):.1f}%"
+        anteil = f"{delikt.get('Jugendanteil_Prozent', 0.0):.1f}%"
+        # 40 Zeichen Breite für Deliktkategorie, 22 für Anteil
         report_output += f"\n{delikt_name:<40} | {anteil:>22}"
 
     # --------------------------------------------------
@@ -323,20 +319,16 @@ if __name__ == '__main__':
     
     current_script_dir = Path(__file__).parent
     
-    # Laden der Daten für alle Jahre (2020-2024)
     daten_gesamt = []
     daten_2024 = []
     jahre = range(2020, 2025)
     
-    # Imperative Schleife zum Laden aller Daten
     for jahr in jahre:
-        # Hier müssten Sie data_2020.csv, data_2021.csv etc. im 'data/' Ordner haben
         daten_pfad = current_script_dir / "data" / f"data_{jahr}.csv"
         geladene_daten = lade_csv_daten(str(daten_pfad), jahr=jahr)
         
         if not geladene_daten:
-            # Falls nur eine Datei fehlt, soll die Analyse für die anderen Jahre weiterlaufen
-            print(f"FEHLER: Daten für Jahr {jahr} konnten nicht geladen werden. Wird ignoriert, wenn es nicht 2024 ist.")
+            print(f"FEHLER: Daten für Jahr {jahr} konnten nicht geladen werden.")
         else:
             daten_gesamt.extend(geladene_daten)
             if jahr == 2024:
@@ -345,12 +337,10 @@ if __name__ == '__main__':
     
     if not daten_2024 or not daten_gesamt:
         print("\nFATALER FEHLER: Mindestens die Daten für 2024 oder die Gesamtdaten fehlen. ")
-        print("Stellen Sie sicher, dass alle data_2020.csv bis data_2024.csv im Ordner 'data' sind.")
         print("Analyse abgebrochen.")
     else:
         print(f"Daten geladen. Gesamtanzahl Delikt-Kategorien (2024): {len(daten_2024)}")
         
-        # Generierung des Reports
         final_report = generate_report(daten_2024, daten_gesamt)
         print(final_report)
         
