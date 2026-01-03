@@ -1,347 +1,137 @@
-import csv
-from pathlib import Path
-import time 
+import pandas as pd
+import numpy as np
+from functools import reduce
+import math
 
-# --- DEFINITION DER EXAKTEN SCHLÜSSEL AUS DER CSV ---
-KEY_DELIKT = 'Modi operandi1)'
-KEY_STRAFTATEN = 'Straftaten2)'
-KEY_TOTAL_BESCHULDIGTE = 'Total beschuldigte Personen'
-KEY_ALTER_10_14 = '10-14'
-KEY_ALTER_15_17 = '15-17'
-KEY_ALTER_18_19_RAW = '18, 19'
-KEY_ALTER_20_24 = '20-24'
-KEY_MAENNLICH = 'männlich'
-KEY_WEIBLICH = 'weiblich'
-KEY_CH = 'Ständige Wohnbev.' 
-KEY_JAHR = 'Jahr'
+pd.set_option("display.max_rows", None)
+pd.set_option("display.max_columns", None)
 
+# Einlesen der Daten
+def get_processed_csv_2024():
+    df_2024 = pd.read_csv("data/data_2024.csv", skiprows=3, index_col=0, skipfooter=8, engine='python')
+    df_2024.columns = ['Straftaten', 'Aufgeklärte_Sraftaten', 'Aufklärungsrate in %',
+        'Total beschuldigte Personen', '<10', '10-14', '15-17', '18, 19',
+        '20-24', '25-29', '30-34', '35-39', '40-49', '50-59', '60-69', '70+',
+        's.n.', 'männlich', 'weiblich', 'juristische Personen', 'o.A.', 'Total',
+        'Ständige Wohnbev.', 'Asyl-Bevölkerung', 'Übrige Ausländer'] # Columns werden umbenannt
+    df_2024.index.name = "Deliktkategorie"
 
-# --- HILFSFUNKTIONEN (BEREINIGUNG & FORMATIERUNG) ---
+    df_2024 = df_2024.drop(columns=['o.A.']) # Alle Werte in der Spalte waren 0, weshalb diese für die Analyse entfernt werden
+    remove_list = ["Andere", "Darknet","Cyber Rufschädigung und unlauteres Verhalten", "Cyberbetrug", "Cyber Wirtschaftskriminalität", 'Total digitale Kriminalität'] 
+    df_2024.drop(index=remove_list, inplace=True) # Entfernung der Totalen Kategoriewerte
 
-def bereinige_schluessel(schluessel):
-    """Bereinigt den Schlüssel von Leerzeichen, Kommas und Zeilenumbrüchen."""
-    if isinstance(schluessel, str):
-        return schluessel.strip().replace(',', ' ').replace('\n', ' ').replace('\r', '').replace('\xa0', ' ').strip()
-    return schluessel
+    for column_name in df_2024.columns:
+        df_2024[column_name] = df_2024[column_name].str.strip()
+        df_2024[column_name] = df_2024[column_name].replace("X", np.nan) # X werden mit nan ersetzt anstatt 0, da X Werte sind, die aus Datenschutzgründen nicht gezeigt werden.
+        df_2024[column_name] = df_2024[column_name].replace("", "0")
+        df_2024[column_name] = df_2024[column_name].str.strip("%").str.replace("\xa0", "").str.replace(" ", "").str.replace("-", "0").astype(float) # Wegen nan wird es einfachheitshalber as float abgespeichert anstatt int
+    return df_2024
 
-def format_number(n):
-    """Formatiert eine Zahl mit Tausender-Trennzeichen (z.B. 12'500)"""
-    return f"{n:,.0f}".replace(",", "'")
+# Verbesserte Auflistung fuer 2d
+def pretty_printing_results(resulting_array):
+    for row in resulting_array:
+        for value in row:
+            print(value, end=' ')
+        print('')
 
-# --- DATENLADEN ---
+# Funktionale und Imperative Auflistung für Straftaten mit mehr als 2000 vorkommnissen
+def straftaten_functional(straftaten_anzahl):
+    straftaten_mehr_als_2000_funktional = list(filter(lambda row: row[1]>2000, straftaten_anzahl))
+    print('\n > 1 Resultate Funktional')
+    pretty_printing_results(straftaten_mehr_als_2000_funktional)
 
-def lade_csv_daten(dateipfad_str, jahr=None):
-    daten_liste = []
-    dateipfad = Path(dateipfad_str)
-    if not dateipfad.exists():
-        return []
+def straftaten_imperativ(straftaten_anzahl):
+    straftaten_mehr_als_2000_imperativ = []
+    for row in straftaten_anzahl:
+        if row[1]>2000:
+            straftaten_mehr_als_2000_imperativ.append(row)
+    print('\n > 1 Resultate Imperativ')
+    pretty_printing_results(straftaten_mehr_als_2000_imperativ)
 
-    try:
-        with open(dateipfad, mode='r', encoding='utf-8') as datei:
-            inhalt = datei.read()
-            delimiter = ',' if inhalt.count(',') > inhalt.count(';') else ';'
-            datei.seek(0)
-            
-            # Überspringe die ersten 3 Metadaten-Zeilen
-            next(datei) 
-            next(datei) 
-            next(datei) 
-            
-            csv_reader = csv.DictReader(datei, delimiter=delimiter)
-            
-            for zeile in csv_reader:
-                bereinigte_daten = {}
-                for schluessel, wert in zeile.items():
-                    bereinigter_schluessel = bereinige_schluessel(schluessel)
-                    if isinstance(wert, str) and wert.strip().upper() in ('X', '', 'NULL', '-'):
-                        bereinigte_daten[bereinigter_schluessel] = 0
-                    else:
-                        try:
-                            sauberer_wert = str(wert).replace('.', '').replace(',', '').replace('\xa0', '').strip()
-                            bereinigte_daten[bereinigter_schluessel] = int(sauberer_wert) 
-                        except ValueError:
-                            bereinigte_daten[bereinigter_schluessel] = wert
-                
-                if jahr:
-                    bereinigte_daten[KEY_JAHR] = jahr
-                
-                delikt_name = bereinigte_daten.get(bereinige_schluessel(KEY_DELIKT))
-                if delikt_name and not delikt_name.startswith('Total') and delikt_name != bereinige_schluessel(KEY_DELIKT):
-                    daten_liste.append(bereinigte_daten)
-                    
-    except Exception as e:
-        return []
-        
-    return daten_liste
+# Funktionale und Imperative Auflistung für totale Delikte pro Altergruppe
+def totale_delikte_functional(totale_anzahl_delikte_pro_altersgruppe):
+    totale_anzahl_delikte_funktional = reduce(lambda acc, tup: tup[1]+acc , totale_anzahl_delikte_pro_altersgruppe, 0)
+    print(f'\n2 Totale Anzahl Delikte berechnet mit Reduce (Funktional): {totale_anzahl_delikte_funktional}')
+    return totale_anzahl_delikte_funktional
 
+def totale_delikte_imperativ(totale_anzahl_delikte_pro_altersgruppe):
+    totale_anzahl_delikte_imperativ = 0
+    for tup in totale_anzahl_delikte_pro_altersgruppe:
+        totale_anzahl_delikte_imperativ += tup[1]
+    print(f'2 Totale Anzahl Delikte berechnet mit einer for loop (Imperativ): {totale_anzahl_delikte_imperativ}')
 
-# ----------------------------------------------------------------------------------
-# DIE 7 ANFORDERUNGEN (Funktionen 1 bis 7)
-# ----------------------------------------------------------------------------------
+# Funktionale und Imperative Auflistung für Prozentualer Anteil der Delikte pro Altergruppe
+def percentual_delikte_functional(totale_anzahl_delikte_pro_altersgruppe, totale_anzahl_delikte_imperativ):
+    prozentualer_anteil_delikte_funktional = list(map(lambda tup: (tup[0], str(round(tup[1]/totale_anzahl_delikte_imperativ*100, 2))+'%'), totale_anzahl_delikte_pro_altersgruppe))
+    print("\n > 3 Funktional ausgerechneter prozentualer Anteil")
+    pretty_printing_results(prozentualer_anteil_delikte_funktional)
 
-# F1: FILTER: filterSevereOffenses(minCases)
-def filterSevereOffenses(delikte_liste, minCases):
-    resultierende_delikte = []
-    key = bereinige_schluessel(KEY_STRAFTATEN) 
-    for delikt in delikte_liste:
-        if delikt.get(key, 0) > minCases:
-            resultierende_delikte.append(delikt)
-    return resultierende_delikte
+def percentual_delikte_imperativ(totale_anzahl_delikte_pro_altersgruppe, totale_anzahl_delikte_imperativ):
+    prozentualer_anteil_delikte_imperativ = []
+    for tup in totale_anzahl_delikte_pro_altersgruppe:
+        prozentualer_anteil_delikte_imperativ.append((tup[0], str(round(tup[1]/totale_anzahl_delikte_imperativ*100, 2))+'%'))
+    print("\n > 3 Imperativ ausgerechneter prozentualer Anteil")
+    pretty_printing_results(prozentualer_anteil_delikte_imperativ)
 
 
-# F2: MAP: mapCalculateYouthShare()
-def mapCalculateYouthShare(delikte_liste):
-    ergebnis_liste = []
-    key_total = bereinige_schluessel(KEY_TOTAL_BESCHULDIGTE)
-    key_a1 = bereinige_schluessel(KEY_ALTER_10_14)
-    key_a2 = bereinige_schluessel(KEY_ALTER_15_17)
-    key_a3 = bereinige_schluessel(KEY_ALTER_18_19_RAW)
-    key_a4 = bereinige_schluessel(KEY_ALTER_20_24)
+# Funktionale und Imperative Auflistung für Ratio bei Delikten von Mann und Frau. Aufgelistet werden die Ausreisser.
+def delikte_men_women_functional(delikte_mann_frau):
+    delikte_anz_mann_pro_frau_funktional = list(map(lambda tup: (tup[0], round(tup[1]/tup[2], 5)), delikte_mann_frau))
 
-    for delikt in delikte_liste:
-        jugend_summe = (
-            delikt.get(key_a1, 0) + delikt.get(key_a2, 0) + 
-            delikt.get(key_a3, 0) + delikt.get(key_a4, 0)   
-        )
-        gesamt_beschuldigte = delikt.get(key_total, 0) 
-        
-        if gesamt_beschuldigte > 0:
-            jugend_anteil = (jugend_summe / gesamt_beschuldigte) * 100
-        else:
-            jugend_anteil = 0.0
-        
-        delikt['Jugendanteil_Prozent'] = round(jugend_anteil, 2)
-        ergebnis_liste.append(delikt)
-        
-    return ergebnis_liste
+    ratios_sorted = sorted(delikte_anz_mann_pro_frau_funktional, key=lambda x: (x[1] is None, x[1]), reverse=True)
+    print(f'\n4 Funktional: The least woman are in the category {ratios_sorted[0]}, and the most are in {ratios_sorted[-1]}')
+
+def delikte_men_women_imperative(delikte_mann_frau):
+    delikte_anz_mann_pro_frau_imperativ = []
+    for tup in delikte_mann_frau:
+        ratio = tup[1]/tup[2]
+        delikte_anz_mann_pro_frau_imperativ.append((tup[0], round(ratio, 5)))
+
+    ratios_sorted = sorted(delikte_anz_mann_pro_frau_imperativ, key=lambda x: (x[1] is None, x[1]), reverse=True)
+    print(f'4 Imperativ: The least woman are in the category {ratios_sorted[0]}, and the most are in {ratios_sorted[-1]}')
 
 
-# F3: FILTER: filterByHighYouthInvolvement(minPercentage)
-def filterByHighYouthInvolvement(delikte_liste, minPercentage):
-    delikte_mit_hohem_jugendanteil = []
-    for delikt in delikte_liste:
-        if delikt.get('Jugendanteil_Prozent', 0.0) > minPercentage:
-            delikte_mit_hohem_jugendanteil.append(delikt)
-    return delikte_mit_hohem_jugendanteil
+# Funktionale und Imperative Auflistung, was die Ratio zwischen Schweizer und Ausländer Delikte sind
+def delikte_total_swiss_and_foreign_functional(delikte_schweizer_und_auslaender):
+    delikte_total_schweizer_auslaender_funktional = reduce(lambda acc, tup: [acc[0]+tup[1], acc[1]+tup[2]], delikte_schweizer_und_auslaender, [0,0])
+    ratio = round(delikte_total_schweizer_auslaender_funktional[0]/delikte_total_schweizer_auslaender_funktional[1],2)
+    print(f"\n5 Funktional: Schweizer {delikte_total_schweizer_auslaender_funktional[0]} und Ausländer: {delikte_total_schweizer_auslaender_funktional[1]} | Ratio: {ratio}")
+
+def delikte_total_swiss_and_foreign_imperativ(delikte_schweizer_und_auslaender):
+    delikte_total_schweizer_auslaender_imperativ = [0,0]
+    for tup in delikte_schweizer_und_auslaender:
+        delikte_total_schweizer_auslaender_imperativ[0]+=tup[1]
+        delikte_total_schweizer_auslaender_imperativ[1]+=tup[2]
+    ratio = round(delikte_total_schweizer_auslaender_imperativ[0]/delikte_total_schweizer_auslaender_imperativ[1],2)
+    print(f"5 Imperativ: Schweizer {delikte_total_schweizer_auslaender_imperativ[0]} und Ausländer: {delikte_total_schweizer_auslaender_imperativ[1]} | Ratio: {ratio}")
 
 
-# F4: REDUCE/FILTER: reduceOffensesByHighMaleShare()
-def reduceOffensesByHighMaleShare(delikte_liste, minRatio=10.0):
-    delikte_maennlich_dominiert = []
-    key_maenner = bereinige_schluessel(KEY_MAENNLICH)
-    key_frauen = bereinige_schluessel(KEY_WEIBLICH)
+def main():
+    df_2024 = get_processed_csv_2024()
+    straftaten_anzahl = list(df_2024['Straftaten'].to_dict().items())
+    straftaten_functional(straftaten_anzahl)
+    straftaten_imperativ(straftaten_anzahl)
 
-    for delikt in delikte_liste:
-        maenner = delikt.get(key_maenner, 0)
-        frauen = delikt.get(key_frauen, 0)
-        
-        if frauen == 0:
-            if maenner > 0: 
-                 delikte_maennlich_dominiert.append(delikt)
-            continue
-            
-        verhaeltnis = maenner / frauen
-        
-        if verhaeltnis > minRatio:
-            delikte_maennlich_dominiert.append(delikt)
-            
-    return delikte_maennlich_dominiert
+    totale_anzahl_delikte_pro_altersgruppe = list(df_2024[['<10', '10-14', '15-17', '18, 19','20-24', '25-29', '30-34', '35-39', '40-49', '50-59', '60-69', '70+']].sum().to_dict().items())
+    totale_anzahl_delikte_imperativ = totale_delikte_functional(totale_anzahl_delikte_pro_altersgruppe) # Ausnahmsweise mit returnwert
+    totale_delikte_imperativ(totale_anzahl_delikte_pro_altersgruppe)
 
+    # Wir nutzen totale_anzahl_delikte_imperativ von zuvor, um den prozentualen Anteil auszurechnen. String formatting findet auch gleich in der lambda Funktion statt.
+    percentual_delikte_functional(totale_anzahl_delikte_pro_altersgruppe, totale_anzahl_delikte_imperativ)
+    percentual_delikte_imperativ(totale_anzahl_delikte_pro_altersgruppe, totale_anzahl_delikte_imperativ)
 
-# F5: REDUCE: reduceSumByAgeGroup(ageGroup)
-def reduceSumByAgeGroup(delikte_liste, ageGroupKey):
-    gesamt_summe = 0
-    key = bereinige_schluessel(ageGroupKey)
-    
-    for delikt in delikte_liste:
-        gesamt_summe += delikt.get(key, 0)
-        
-    return gesamt_summe
+    delikte_mann_frau = list(df_2024[['männlich', 'weiblich']].itertuples(name=None))
+    delikte_mann_frau = list(filter(lambda tup: tup[2] != 0 and not math.isnan(tup[2]), delikte_mann_frau))
+    # ('Phishing', 128.0, 51.0) bedeutet, Kategorie Phishing gab es 128 Delikte von Männern und 51 von Frauen.
+    delikte_men_women_functional(delikte_mann_frau)
+    delikte_men_women_imperative(delikte_mann_frau)
 
-
-# F6: MAP: mapNormalizeSwissRatio()
-def mapNormalizeSwissRatio(delikte_liste):
-    ergebnis_liste = []
-    key_total = bereinige_schluessel(KEY_TOTAL_BESCHULDIGTE)
-    key_ch = bereinige_schluessel(KEY_CH)
-    
-    for delikt in delikte_liste:
-        total = delikt.get(key_total, 0)
-        ch_anteil = delikt.get(key_ch, 0)
-        
-        anteil_prozent = (ch_anteil / total) * 100 if total > 0 else 0.0
-        
-        delikt['Schweizer_Anteil_Prozent'] = round(anteil_prozent, 2)
-        ergebnis_liste.append(delikt)
-        
-    return ergebnis_liste
-
-
-# F7: REDUCE: reduceTotalCasesOverTime(startYear, endYear)
-def reduceTotalCasesOverTime(alle_daten):
-    jahres_summen = {}
-    
-    for delikt in alle_daten:
-        jahr = delikt.get(KEY_JAHR)
-        straftaten = delikt.get(bereinige_schluessel(KEY_STRAFTATEN), 0)
-        
-        if jahr:
-            if jahr in jahres_summen:
-                jahres_summen[jahr] += straftaten
-            else:
-                jahres_summen[jahr] = straftaten
-            
-    sorted_years = sorted(jahres_summen.keys())
-    ergebnis_liste = []
-    
-    letzte_summe = 0
-    for jahr in sorted_years:
-        aktuelle_summe = jahres_summen[jahr]
-        
-        if letzte_summe > 0:
-            veraenderung = ((aktuelle_summe - letzte_summe) / letzte_summe) * 100
-            veraenderung_str = f"+ {veraenderung:.1f}%" if veraenderung > 0 else f"{veraenderung:.1f}%"
-        else:
-            veraenderung_str = "-"
-            
-        ergebnis_liste.append({
-            KEY_JAHR: jahr, 
-            'Gesamtzahl Straftaten': aktuelle_summe, 
-            'Veränderung zum Vorjahr': veraenderung_str
-        })
-        letzte_summe = aktuelle_summe
-        
-    return ergebnis_liste
-
-
-# ----------------------------------------------------------------------------------
-# HAUPT-REPORT-FUNKTION
-# ----------------------------------------------------------------------------------
-
-def generate_report(daten_2024, daten_gesamt):
-    
-    # --------------------------------------------------
-    # 1. ZEITLICHE ENTWICKLUNG (F7)
-    # --------------------------------------------------
-    
-    zeit_entwicklung = reduceTotalCasesOverTime(daten_gesamt)
-    
-    report_output = "\n==================================================\n"
-    report_output += "PROJEKTARBEIT M323\n"
-    report_output += "==================================================\n"
-    report_output += f"DATUM: {time.strftime('%Y-%m-%d')}\n" 
-    report_output += "SCHWERPUNKT: Digitale Kriminalität - Demografie der Beschuldigten \n"
-    report_output += "----------------------------------------------------------------------------------\n"
-    
-    report_output += "\n----------------------------------------------"
-    report_output += "\n1. ZEITLICHE ENTWICKLUNG DER GESAMTZAHL STRAFTATEN (Funktion 7)"
-    report_output += "\n--------------------------------------------------"
-    report_output += "\nVergleich der Gesamtfallzahlen der Digitalen Kriminalität (Summe aller Delikte)."
-    report_output += "\nJahr | Gesamtzahl Straftaten (Summe) | Veränderung zum Vorjahr"
-    report_output += "\n-----|-------------------------------|------------------------"
-    
-    for jahr_daten in zeit_entwicklung:
-        jahr = jahr_daten.get(KEY_JAHR)
-        summe = format_number(jahr_daten.get('Gesamtzahl Straftaten'))
-        veraenderung = jahr_daten.get('Veränderung zum Vorjahr')
-        
-        # Wichtig: Die Formatierung muss die genauen Leerzeichen (Space ' ') und den Hochkomma-Separator (') nutzen.
-        # Hier wird die alte Formatierung beibehalten, wie in Ihrem Output gezeigt.
-        report_output += f"\n{jahr:<4} | {summe:>27} | {veraenderung:>22}" 
-
-    report_output += "\nBEOBACHTUNGEN: Die Fallzahlen sind über den gesamten Zeitraum signifikant gestiegen."
-    
-    # --------------------------------------------------
-    # 2. HÖCHSTE RELATIVE BETEILIGUNG DER MINDERJÄHRIGEN (F2/F6)
-    # --------------------------------------------------
-    
-    # F2 aufrufen, um die Kennzahl 'Jugendanteil_Prozent' zu erhalten.
-    daten_mit_jugend_anteil = mapCalculateYouthShare(daten_2024[:]) 
-    
-    # Sortieren und Top 5 auswählen (höchster Anteil zuerst)
-    top_jugend = sorted(
-        daten_mit_jugend_anteil, 
-        key=lambda x: x.get('Jugendanteil_Prozent', 0), 
-        reverse=True
-    )
-    top_jugend_5 = top_jugend[:5]
-    
-    report_output += "\n\n----------------------------------------------"
-    report_output += "\n2. HÖCHSTE RELATIVE BETEILIGUNG DER MINDERJÄHRIGEN (Funktion 6)" 
-    report_output += "\n--------------------------------------------------"
-    report_output += "\nDiese Liste zeigt den Anteil beschuldigter Personen unter 25 Jahren pro Delikt (Top 5 nach Anteil):"
-    report_output += "\nDeliktkategorie                          | Anteil unter 25-Jährigen"
-    report_output += "\n-----------------------------------------|------------------------"
-    
-    for delikt in top_jugend_5:
-        delikt_name = delikt.get(bereinige_schluessel(KEY_DELIKT), 'N/A')
-        anteil = f"{delikt.get('Jugendanteil_Prozent', 0.0):.1f}%"
-        # 40 Zeichen Breite für Deliktkategorie, 22 für Anteil
-        report_output += f"\n{delikt_name:<40} | {anteil:>22}"
-
-    # --------------------------------------------------
-    # 3. MÄNNLICH DOMINIERT (F4)
-    # --------------------------------------------------
-    
-    maennlich_dominiert_delikte = reduceOffensesByHighMaleShare(daten_2024[:])
-    
-    report_output += "\n\n----------------------------------------------"
-    report_output += "\n3. MÄNNLICH DOMINIERT (Funktion 4)"
-    report_output += "\n--------------------------------------------------"
-    report_output += "\nDelikte mit Geschlechterverhältnis (M:W) über 10:1:"
-    
-    key_maenner = bereinige_schluessel(KEY_MAENNLICH)
-    key_frauen = bereinige_schluessel(KEY_WEIBLICH)
-    
-    if not maennlich_dominiert_delikte:
-        report_output += "\n- Keine Delikte gefunden, bei denen das M:W-Verhältnis > 10:1 ist."
-    else:
-        for delikt in maennlich_dominiert_delikte:
-            maenner = delikt.get(key_maenner, 0)
-            frauen = delikt.get(key_frauen, 0)
-            verhaeltnis_float = round(maenner / frauen, 2) if frauen > 0 else None
-            
-            verhaeltnis_str = f"{verhaeltnis_float}" if verhaeltnis_float is not None else "unendlich"
-            
-            report_output += f"\n- {delikt.get(bereinige_schluessel(KEY_DELIKT))} (Verhältnis: {verhaeltnis_str} [{maenner} Männer / {frauen} Frauen])"
-
-    report_output += "\n=================================================="
-    return report_output
-
-
-# ----------------------------------------------------------------------------------
-# HAUPTTEIL ZUR AUSFÜHRUNG
-# ----------------------------------------------------------------------------------
+    df_einwohner = df_2024[['Ständige Wohnbev.', 'Asyl-Bevölkerung', 'Übrige Ausländer']].dropna()
+    df_einwohner['Summe_Asyl_Ausländer'] = df_einwohner[['Asyl-Bevölkerung', 'Übrige Ausländer']].sum(axis=1)
+    delikte_schweizer_und_auslaender = list(df_einwohner.drop(columns=['Asyl-Bevölkerung', 'Übrige Ausländer']).itertuples(name=None))
+    # ('Phishing', 112.0, 67.0) bedeutet, Kategorie Phishing gab es 112 Delikte von Schweizern und 67 von Ausländer/Asylanten.
+    delikte_total_swiss_and_foreign_functional(delikte_schweizer_und_auslaender)
+    delikte_total_swiss_and_foreign_imperativ(delikte_schweizer_und_auslaender)
 
 if __name__ == '__main__':
-    
-    print("--- Start der Kriminalitätsanalyse V1.0 (Imperativ) ---")
-    
-    current_script_dir = Path(__file__).parent
-    
-    daten_gesamt = []
-    daten_2024 = []
-    jahre = range(2020, 2025)
-    
-    for jahr in jahre:
-        daten_pfad = current_script_dir / "data" / f"data_{jahr}.csv"
-        geladene_daten = lade_csv_daten(str(daten_pfad), jahr=jahr)
-        
-        if not geladene_daten:
-            print(f"FEHLER: Daten für Jahr {jahr} konnten nicht geladen werden.")
-        else:
-            daten_gesamt.extend(geladene_daten)
-            if jahr == 2024:
-                daten_2024 = geladene_daten 
-                
-    
-    if not daten_2024 or not daten_gesamt:
-        print("\nFATALER FEHLER: Mindestens die Daten für 2024 oder die Gesamtdaten fehlen. ")
-        print("Analyse abgebrochen.")
-    else:
-        print(f"Daten geladen. Gesamtanzahl Delikt-Kategorien (2024): {len(daten_2024)}")
-        
-        final_report = generate_report(daten_2024, daten_gesamt)
-        print(final_report)
-        
-        print("Analyse V1.0 erfolgreich abgeschlossen.")
+    main()
