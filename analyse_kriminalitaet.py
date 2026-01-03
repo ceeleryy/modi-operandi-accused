@@ -28,7 +28,7 @@ def get_processed_csv_2024() -> pd.DataFrame:
         df_2024[column_name] = df_2024[column_name].str.strip("%").str.replace("\xa0", "").str.replace(" ", "").str.replace("-", "0").astype(float) # Wegen nan wird es einfachheitshalber as float abgespeichert anstatt int
     return df_2024
 
-# Verbesserte Auflistung fuer 2d
+# Verbesserte Auflistung für 2d
 def pretty_printing_results(resulting_array: Iterable[Iterable[Any]]) -> None:
     for row in resulting_array:
         for value in row:

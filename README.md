@@ -18,23 +18,103 @@ Die Datengrundlage ist die Tabelle "Modi Operandi der digitalen Kriminalität un
 ### Produktfunktionen: 
 Das Programm generiert Berichte, indem es Filter-, Map- und Reduce-Operationen auf die Liste der Kriminalitätskategorien anwendet.
 
-**filterSevereOffenses(minCases):** Filtert alle Deliktkategorien heraus, deren Anzahl der Straftaten einer bestimmten Fallzahl (z.B. > 500) überschreitet, um sich auf die häufigsten Delikte zu konzentrieren.
+#### straftaten_functional / straftaten_imperativ
 
-**mapCalculateYouthShare():** Berechnet für jede Deliktskategorie den Gesamtanteil der unter 25-Jährigen (Summe der Altersgruppen 10-14, 15-19, 20-24) und fügt diesen Wert als neue Kennzahl hinzu. 
+Filtert alle Deliktkategorien heraus, deren Anzahl der Straftaten mehr als 2000 beträgt.
 
-**filterByHighYouthInvolvement(minPercentage):** Filtert (basierend auf dem Ergebnis von Map 2) die Delikte, bei denen der Anteil der unter 25-Jährigen über einem definierten Prozentsatz (z.B. 60%) liegt.
+Ziel:
+Fokussierung auf die häufigsten Deliktfelder.
 
-**reduceOffensesByHighMaleShare():** Reduziert die Liste auf Delikte mit einem Geschlechterverhältnis (Männer zu Frauen) über 10:1, um männlich dominierte Tatbereiche zu identifizieren. 
 
-**reduceSumByAgeGroup(ageGroup):** Berechnet die Gesamtzahl der Beschuldigten für eine bestimmte Altersgruppe (z.B. 40-49) über alle gefilterten Deliktkategorien hinweg. 
+#### totale_delikte_functional / totale_delikte_imperativ
 
-**mapNormalizeSwissRatio():** Berechnet den Anteil beschuldigter Schweizer Bürger pro Delikt.
+Berechnet die Gesamtsumme der Straftaten über alle Altersgruppen hinweg mittels reduce.
 
-**reduceTotalCasesOverTime(startYear, endYear):** Berechnet die Gesamtzahl der Straftaten für jedes Jahr im gegebenen Zeitraum (2020 bis 2024). Das Ergebnis ist eine Liste von Jahres-Summen, die die Entwicklung der digitalen Kriminalität visualisiert und die Veränderung zum Vorjahr vergleicht.
+Ziel:
+Ermittlung der Gesamtbelastung je Altersgruppe.
+
+
+#### percentual_delikte_functional / percentual_delikte_functional_imperativ
+
+Berechnet den prozentualen Anteil der Delikte pro Altersgruppe.
+
+Ziel:
+Vergleich der Verteilung der Straftaten auf Altersgruppen.
+
+
+#### delikte_men_women_functional / delikte_men_women_imperative
+
+Berechnet für jede Deliktkategorie das Verhältnis Männer zu Frauen.
+
+Ziel:
+Erkennung stark männlich vs weiblich dominierter Deliktfelder.
+
+
+#### delikte_total_swiss_and_foreign_functional / delikte_total_swiss_and_foreign_imperative
+
+Berechnet die Gesamtzahl der Straftaten von Schweizern im Vergleich zu Ausländern/Asylbewerbern.
+
+Ziel:
+Analyse der Deliktverteilung nach Staatsangehörigkeit.
+
 
 ### Technologien:
 **Programmiersprache:** Python  
 **UI:** Output auf die Konsole mit integrierten Mitteln  
 **Art der Applikation:** Konsolenapplikation  
-**Funktionale Elemente:** Datensatz (Download)  
-**Output:** Formatierter Output auf die Konsole  
+**Funktionale Elemente:** Lambda-Funktionen, map, reduce, filter
+**Output:**  
+1 Resultate Funktional
+Phishing 5930.0 
+davon: Kleinanzeigeplattformen – Ware nicht geliefert 10625.0 
+davon: Missbrauch von Online-Zahlungssyst./Wertkarten oder einer fremden Identität, um einen Betrug zu begehen 22293.0 
+davon: Online Anlagebetrug 2974.0 
+Money/Package Mules 3757.0 
+Cyber Sexualdelikte 2922.0 
+Verbotene Pornografie 2705.0 
+
+1 Resultate Imperativ
+Phishing 5930.0 
+davon: Kleinanzeigeplattformen – Ware nicht geliefert 10625.0 
+davon: Missbrauch von Online-Zahlungssyst./Wertkarten oder einer fremden Identität, um einen Betrug zu begehen 22293.0 
+davon: Online Anlagebetrug 2974.0 
+Money/Package Mules 3757.0 
+Cyber Sexualdelikte 2922.0 
+Verbotene Pornografie 2705.0 
+
+2 Totale Anzahl Delikte berechnet mit Reduce (Funktional): 8711.0
+2 Totale Anzahl Delikte berechnet mit einer for loop (Imperativ): 8711.0
+
+3 Funktional ausgerechneter prozentualer Anteil
+<10 0.41%
+10-14 11.26%
+15-17 12.64%
+18, 19 6.52%
+20-24 11.8%
+25-29 9.48%
+30-34 8.68%
+35-39 8.06%
+40-49 12.54%
+50-59 10.04%
+60-69 5.68%
+70+ 2.88%
+
+3 Imperativ ausgerechneter prozentualer Anteil
+<10 0.41%
+10-14 11.26%
+15-17 12.64%
+18, 19 6.52%
+20-24 11.8%
+25-29 9.48%
+30-34 8.68%
+35-39 8.06%
+40-49 12.54%
+50-59 10.04%
+60-69 5.68%
+70+ 2.88%
+
+4 Funktional: The least women are in the category ('Grooming', 11.83333), and the most are in ('Malware – Rogueware/Scareware', 1.25)
+4 Imperativ: The least women are in the category ('Grooming', 11.83333), and the most are in ('Malware – Rogueware/Scareware', 1.25)
+
+5 Funktional: Schweizer 7401.0 und Ausländer: 1314.0 | Ratio: 5.63
+5 Imperativ: Schweizer 7401.0 und Ausländer: 1314.0 | Ratio: 5.63
