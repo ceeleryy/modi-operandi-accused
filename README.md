@@ -18,7 +18,7 @@ Die Datengrundlage ist die Tabelle "Modi Operandi der digitalen Kriminalität un
 ### Produktfunktionen: 
 Das Programm generiert Berichte, indem es Filter-, Map- und Reduce-Operationen auf die Liste der Kriminalitätskategorien anwendet.
 
-#### straftaten_functional / straftaten_imperativ
+#### haeufigste_straftaten
 
 Filtert alle Deliktkategorien heraus, deren Anzahl der Straftaten mehr als 2000 beträgt.
 
@@ -26,7 +26,7 @@ Ziel:
 Fokussierung auf die häufigsten Deliktfelder.
 
 
-#### totale_delikte_functional / totale_delikte_imperativ
+#### totale_delikte
 
 Berechnet die Gesamtsumme der Straftaten über alle Altersgruppen hinweg mittels reduce.
 
@@ -34,7 +34,7 @@ Ziel:
 Ermittlung der Gesamtbelastung je Altersgruppe.
 
 
-#### percentual_delikte_functional / percentual_delikte_functional_imperativ
+#### prozentual_delikte
 
 Berechnet den prozentualen Anteil der Delikte pro Altersgruppe.
 
@@ -42,7 +42,7 @@ Ziel:
 Vergleich der Verteilung der Straftaten auf Altersgruppen.
 
 
-#### delikte_men_women_functional / delikte_men_women_imperative
+#### delikte_maenner_frauen
 
 Berechnet für jede Deliktkategorie das Verhältnis Männer zu Frauen.
 
@@ -50,7 +50,7 @@ Ziel:
 Erkennung stark männlich vs weiblich dominierter Deliktfelder.
 
 
-#### delikte_total_swiss_and_foreign_functional / delikte_total_swiss_and_foreign_imperative
+#### delikte_total_schweizer_und_auslaender
 
 Berechnet die Gesamtzahl der Straftaten von Schweizern im Vergleich zu Ausländern/Asylbewerbern.
 

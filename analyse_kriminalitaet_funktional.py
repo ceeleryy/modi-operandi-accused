@@ -34,53 +34,39 @@ def pretty_printing_results(resulting_array: Iterable[Iterable[Any]]) -> None:
             print(value, end=' ')
         print('')
 
-# Imperative Auflistung für Straftaten mit mehr als 2000 Vorkommnissen
+# Funktionale Auflistung für Straftaten mit mehr als 2000 Vorkommnissen
 def haeufigste_straftaten(straftaten_anzahl: List[Tuple[str, float]]) -> None:
-    straftaten_mehr_als_2000: List[Tuple[str, float]] = []
-    for row in straftaten_anzahl:
-        if row[1]>2000:
-            straftaten_mehr_als_2000.append(row)
-    print('\n 1 Resultate Imperativ')
+    straftaten_mehr_als_2000 = list(filter(lambda row: row[1]>2000, straftaten_anzahl))
+    print('\n 1 Resultate Funktional')
     pretty_printing_results(straftaten_mehr_als_2000)
 
-# Imperative Auflistung für totale Delikte pro Altergruppe
+# Funktionale Auflistung für totale Delikte pro Altergruppe
 def totale_delikte(totale_anzahl_delikte_pro_altersgruppe: List[Tuple[str, float]]) -> float:
-    totale_anzahl_delikte: float = 0
-    for tup in totale_anzahl_delikte_pro_altersgruppe:
-        totale_anzahl_delikte += tup[1]
-    print(f'2 Totale Anzahl Delikte berechnet mit einer for loop (Imperativ): {totale_anzahl_delikte}')
+    totale_anzahl_delikte = reduce(lambda acc, tup: tup[1]+acc , totale_anzahl_delikte_pro_altersgruppe, 0)
+    print(f'\n2 Totale Anzahl Delikte berechnet mit Reduce (Funktional): {totale_anzahl_delikte}')
     return totale_anzahl_delikte
 
-# Imperative Auflistung für Prozentualer Anteil der Delikte pro Altergruppe
+# Funktionale Auflistung für Prozentualer Anteil der Delikte pro Altergruppe
 def delikte_prozentual(
     totale_anzahl_delikte_pro_altersgruppe: List[Tuple[str, float]],
     totale_anzahl_delikte: float
 ) -> None:
-    prozentualer_anteil_delikte: List[Tuple[str, str]] = []
-    for tup in totale_anzahl_delikte_pro_altersgruppe:
-        prozentualer_anteil_delikte.append((tup[0], str(round(tup[1]/totale_anzahl_delikte*100, 2))+'%'))
-    print("\n 3 Imperativ ausgerechneter prozentualer Anteil")
+    prozentualer_anteil_delikte = list(map(lambda tup: (tup[0], str(round(tup[1]/totale_anzahl_delikte*100, 2))+'%'), totale_anzahl_delikte_pro_altersgruppe))
+    print("\n 3 Funktional ausgerechneter prozentualer Anteil")
     pretty_printing_results(prozentualer_anteil_delikte)
 
-
-# Imperative Auflistung für Ratio bei Delikten von Mann und Frau. Aufgelistet werden die Ausreisser.
+# Funktionale Auflistung für Ratio bei Delikten von Mann und Frau. Aufgelistet werden die Ausreisser.
 def delikte_maenner_frauen(delikte_mann_frau: List[Tuple[str, float, float]]) -> None:
-    delikte_anz_mann_pro_frau: List[Tuple[str, float]] = []
-    for tup in delikte_mann_frau:
-        ratio = tup[1]/tup[2]
-        delikte_anz_mann_pro_frau.append((tup[0], round(ratio, 5)))
-
+    delikte_anz_mann_pro_frau = list(map(lambda tup: (tup[0], round(tup[1]/tup[2], 5)), delikte_mann_frau))
     ratios_sorted = sorted(delikte_anz_mann_pro_frau, key=lambda x: (x[1] is None, x[1]), reverse=True)
-    print(f'4 Imperativ: The least women are in the category {ratios_sorted[0]}, and the most are in {ratios_sorted[-1]}')
+    print(f'\n4 Funktional: The least women are in the category {ratios_sorted[0]}, and the most are in {ratios_sorted[-1]}')
 
-# Imperative Auflistung, was die Ratio zwischen Schweizer und Ausländer Delikte sind
+# Funktionale Auflistung für Ratio bei Delikten von Mann und Frau. Aufgelistet werden die Ausreisser.
 def delikte_total_schweizer_und_auslaender(delikte_schweizer_und_auslaender: List[Tuple[str, float, float]]) -> None:
-    delikte_total_schweizer_auslaender = [0,0]
-    for tup in delikte_schweizer_und_auslaender:
-        delikte_total_schweizer_auslaender[0]+=tup[1]
-        delikte_total_schweizer_auslaender[1]+=tup[2]
+    delikte_total_schweizer_auslaender = reduce(lambda acc, tup: [acc[0]+tup[1], acc[1]+tup[2]], delikte_schweizer_und_auslaender, [0,0])
     ratio = round(delikte_total_schweizer_auslaender[0]/delikte_total_schweizer_auslaender[1],2)
-    print(f"5 Imperativ: Schweizer {delikte_total_schweizer_auslaender[0]} und Ausländer: {delikte_total_schweizer_auslaender[1]} | Ratio: {ratio}")
+    print(f"\n5 Funktional: Schweizer {delikte_total_schweizer_auslaender[0]} und Ausländer: {delikte_total_schweizer_auslaender[1]} | Ratio: {ratio}")
+
 
 def main() -> None:
     df_2024 = get_processed_csv_2024()
@@ -89,10 +75,10 @@ def main() -> None:
     haeufigste_straftaten(straftaten_anzahl)
 
     totale_anzahl_delikte_pro_altersgruppe = list(df_2024[['<10', '10-14', '15-17', '18, 19','20-24', '25-29', '30-34', '35-39', '40-49', '50-59', '60-69', '70+']].sum().to_dict().items())
-    totale_anzahl_delikte_value = totale_delikte(totale_anzahl_delikte_pro_altersgruppe)
+    totale_anzahl_delikte = totale_delikte(totale_anzahl_delikte_pro_altersgruppe) 
 
     # Wir nutzen totale_anzahl_delikte von zuvor, um den prozentualen Anteil auszurechnen. String formatting findet auch gleich in der lambda Funktion statt.
-    delikte_prozentual(totale_anzahl_delikte_pro_altersgruppe, totale_anzahl_delikte_value)
+    delikte_prozentual(totale_anzahl_delikte_pro_altersgruppe, totale_anzahl_delikte)
 
     delikte_mann_frau = list(df_2024[['männlich', 'weiblich']].itertuples(name=None))
     delikte_mann_frau = list(filter(lambda tup: tup[2] != 0 and not math.isnan(tup[2]), delikte_mann_frau))
