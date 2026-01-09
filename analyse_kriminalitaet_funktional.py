@@ -37,13 +37,13 @@ def pretty_printing_results(resulting_array: Iterable[Iterable[Any]]) -> None:
 # Funktionale Auflistung für Straftaten mit mehr als 2000 Vorkommnissen
 def haeufigste_straftaten(straftaten_anzahl: List[Tuple[str, float]]) -> None:
     straftaten_mehr_als_2000 = list(filter(lambda row: row[1]>2000, straftaten_anzahl))
-    print('\n 1 Resultate Funktional')
+    print('\n--- 1. HÄUFIGSTE DELIKTKATEGORIEN (> 2000 FÄLLE) ---')
     pretty_printing_results(straftaten_mehr_als_2000)
 
 # Funktionale Auflistung für totale Delikte pro Altergruppe
 def totale_delikte(totale_anzahl_delikte_pro_altersgruppe: List[Tuple[str, float]]) -> float:
     totale_anzahl_delikte = reduce(lambda acc, tup: tup[1]+acc , totale_anzahl_delikte_pro_altersgruppe, 0)
-    print(f'\n2 Totale Anzahl Delikte berechnet mit Reduce (Funktional): {totale_anzahl_delikte}')
+    print(f'\n--- 2. GESAMTZAHL ALLER ERFASSTEN STRAFTATEN --- \n {totale_anzahl_delikte}')
     return totale_anzahl_delikte
 
 # Funktionale Auflistung für Prozentualer Anteil der Delikte pro Altergruppe
@@ -52,20 +52,22 @@ def delikte_prozentual(
     totale_anzahl_delikte: float
 ) -> None:
     prozentualer_anteil_delikte = list(map(lambda tup: (tup[0], str(round(tup[1]/totale_anzahl_delikte*100, 2))+'%'), totale_anzahl_delikte_pro_altersgruppe))
-    print("\n 3 Funktional ausgerechneter prozentualer Anteil")
+    print("\n--- 3. PROZENTUALE VERTEILUNG DER BESCHULDIGTEN NACH ALTERSGRUPPEN ---")
     pretty_printing_results(prozentualer_anteil_delikte)
 
 # Funktionale Auflistung für Ratio bei Delikten von Mann und Frau. Aufgelistet werden die Ausreisser.
 def delikte_maenner_frauen(delikte_mann_frau: List[Tuple[str, float, float]]) -> None:
     delikte_anz_mann_pro_frau = list(map(lambda tup: (tup[0], round(tup[1]/tup[2], 5)), delikte_mann_frau))
     ratios_sorted = sorted(delikte_anz_mann_pro_frau, key=lambda x: (x[1] is None, x[1]), reverse=True)
-    print(f'\n4 Funktional: The least women are in the category {ratios_sorted[0]}, and the most are in {ratios_sorted[-1]}')
+    print('\n--- 4. EXTREMWERTE IM GESCHLECHTERVERHÄLTNIS (MÄNNER PRO FRAU) ---')
+    print(f'\nThe least women are in the category {ratios_sorted[0]}, and the most are in {ratios_sorted[-1]}')
 
 # Funktionale Auflistung für Ratio bei Delikten von Mann und Frau. Aufgelistet werden die Ausreisser.
 def delikte_total_schweizer_und_auslaender(delikte_schweizer_und_auslaender: List[Tuple[str, float, float]]) -> None:
     delikte_total_schweizer_auslaender = reduce(lambda acc, tup: [acc[0]+tup[1], acc[1]+tup[2]], delikte_schweizer_und_auslaender, [0,0])
     ratio = round(delikte_total_schweizer_auslaender[0]/delikte_total_schweizer_auslaender[1],2)
-    print(f"\n5 Funktional: Schweizer {delikte_total_schweizer_auslaender[0]} und Ausländer: {delikte_total_schweizer_auslaender[1]} | Ratio: {ratio}")
+    print('\n--- 5. VERHÄLTNIS DER STRAFTATEN NACH HERKUNFT (SCHWEIZ VS. AUSLAND) ---')
+    print(f"\nSchweizer {delikte_total_schweizer_auslaender[0]} und Ausländer: {delikte_total_schweizer_auslaender[1]} | Ratio: {ratio}")
 
 
 def main() -> None:
