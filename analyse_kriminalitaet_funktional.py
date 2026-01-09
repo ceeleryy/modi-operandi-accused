@@ -42,8 +42,20 @@ def haeufigste_straftaten(straftaten_anzahl: List[Tuple[str, float]]) -> None:
 
 # Funktionale Auflistung für totale Delikte pro Altergruppe
 def totale_delikte(totale_anzahl_delikte_pro_altersgruppe: List[Tuple[str, float]]) -> float:
-    totale_anzahl_delikte = reduce(lambda acc, tup: tup[1]+acc , totale_anzahl_delikte_pro_altersgruppe, 0)
-    print(f'\n--- 2. GESAMTZAHL ALLER ERFASSTEN STRAFTATEN --- \n {totale_anzahl_delikte}')
+    # Reduce Startwert ist jetzt (0, 0.0) -> (Gezählte Einträge, Aufsummierte Delikte)
+    # acc[0] ist der Zähler, acc[1] ist die Summe
+    ergebnis_tupel = reduce(
+        lambda acc, tup: (acc[0] + 1, acc[1] + tup[1]), 
+        totale_anzahl_delikte_pro_altersgruppe, 
+        (0, 0.0)
+    )
+    
+    anzahl_kategorien = ergebnis_tupel[0]
+    totale_anzahl_delikte = ergebnis_tupel[1]
+
+    print('\n--- 2. GESAMTZAHL ALLER ERFASSTEN STRAFTATEN ---')
+    print(f'Totale Anzahl Delikte: {totale_anzahl_delikte} (berechnet aus {anzahl_kategorien} Alterskategorien)')
+    
     return totale_anzahl_delikte
 
 # Funktionale Auflistung für Prozentualer Anteil der Delikte pro Altergruppe
@@ -60,7 +72,7 @@ def delikte_maenner_frauen(delikte_mann_frau: List[Tuple[str, float, float]]) ->
     delikte_anz_mann_pro_frau = list(map(lambda tup: (tup[0], round(tup[1]/tup[2], 5)), delikte_mann_frau))
     ratios_sorted = sorted(delikte_anz_mann_pro_frau, key=lambda x: (x[1] is None, x[1]), reverse=True)
     print('\n--- 4. EXTREMWERTE IM GESCHLECHTERVERHÄLTNIS (MÄNNER PRO FRAU) ---')
-    print(f'\nThe least women are in the category {ratios_sorted[0]}, and the most are in {ratios_sorted[-1]}')
+    print(f'Am wenigsten Frauen sind in der Kategorie {ratios_sorted[0]} vertreten, am meisten in {ratios_sorted[-1]}.')
 
 # Funktionale Auflistung für Ratio bei Delikten von Mann und Frau. Aufgelistet werden die Ausreisser.
 def delikte_total_schweizer_und_auslaender(delikte_schweizer_und_auslaender: List[Tuple[str, float, float]]) -> None:

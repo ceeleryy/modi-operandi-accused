@@ -46,9 +46,15 @@ def haeufigste_straftaten(straftaten_anzahl: List[Tuple[str, float]]) -> None:
 # Imperative Auflistung für totale Delikte pro Altergruppe
 def totale_delikte(totale_anzahl_delikte_pro_altersgruppe: List[Tuple[str, float]]) -> float:
     totale_anzahl_delikte: float = 0
+    anzahl_kategorien: int = 0
+    
     for tup in totale_anzahl_delikte_pro_altersgruppe:
         totale_anzahl_delikte += tup[1]
-    print(f'\n--- 2. GESAMTZAHL ALLER ERFASSTEN STRAFTATEN --- \n {totale_anzahl_delikte}')
+        anzahl_kategorien += 1  # Hier wird manuell hochgezählt
+        
+    print('\n--- 2. GESAMTZAHL ALLER ERFASSTEN STRAFTATEN ---')
+    print(f'Totale Anzahl Delikte: {totale_anzahl_delikte} (berechnet aus {anzahl_kategorien} Alterskategorien)')
+    
     return totale_anzahl_delikte
 
 # Imperative Auflistung für Prozentualer Anteil der Delikte pro Altergruppe
@@ -57,9 +63,9 @@ def delikte_prozentual(
     totale_anzahl_delikte: float
 ) -> None:
     prozentualer_anteil_delikte: List[Tuple[str, str]] = []
+    print("\n--- 3. PROZENTUALE VERTEILUNG DER BESCHULDIGTEN NACH ALTERSGRUPPEN ---")
     for tup in totale_anzahl_delikte_pro_altersgruppe:
         prozentualer_anteil_delikte.append((tup[0], str(round(tup[1]/totale_anzahl_delikte*100, 2))+'%'))
-        print("\n--- 3. PROZENTUALE VERTEILUNG DER BESCHULDIGTEN NACH ALTERSGRUPPEN ---")
     pretty_printing_results(prozentualer_anteil_delikte)
 
 
@@ -72,7 +78,7 @@ def delikte_maenner_frauen(delikte_mann_frau: List[Tuple[str, float, float]]) ->
 
     ratios_sorted = sorted(delikte_anz_mann_pro_frau, key=lambda x: (x[1] is None, x[1]), reverse=True)
     print('\n--- 4. EXTREMWERTE IM GESCHLECHTERVERHÄLTNIS (MÄNNER PRO FRAU) ---')
-    print(f'The least women are in the category {ratios_sorted[0]}, and the most are in {ratios_sorted[-1]}')
+    print(f'Am wenigsten Frauen sind in der Kategorie {ratios_sorted[0]} vertreten, am meisten in {ratios_sorted[-1]}.')
 
 # Imperative Auflistung, was die Ratio zwischen Schweizer und Ausländer Delikte sind
 def delikte_total_schweizer_und_auslaender(delikte_schweizer_und_auslaender: List[Tuple[str, float, float]]) -> None:
