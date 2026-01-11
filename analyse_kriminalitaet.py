@@ -10,7 +10,7 @@ pd.set_option("display.max_columns", None)
 def get_processed_csv_2024() -> pd.DataFrame:
     df_2024 = pd.read_csv("data/data_2024.csv", skiprows=3, index_col=0, skipfooter=8, engine='python')
     df_2024.columns = ['Straftaten', 'Aufgeklärte_Sraftaten', 'Aufklärungsrate in %',
-        'Total beschuldigte Personen', '<10', '10-14', '15-17', '18, 19',
+        'Total beschuldigte Personen', '<10', '10-14', '15-17', '18-19',
         '20-24', '25-29', '30-34', '35-39', '40-49', '50-59', '60-69', '70+',
         's.n.', 'männlich', 'weiblich', 'juristische Personen', 'o.A.', 'Total',
         'Ständige Wohnbev.', 'Asyl-Bevölkerung', 'Übrige Ausländer'] # Columns werden umbenannt
@@ -88,15 +88,16 @@ def delikte_total_schweizer_und_auslaender(delikte_schweizer_und_auslaender: Lis
         delikte_total_schweizer_auslaender[1]+=tup[2]
     ratio = round(delikte_total_schweizer_auslaender[0]/delikte_total_schweizer_auslaender[1],2)
     print('\n--- 5. VERHÄLTNIS DER STRAFTATEN NACH HERKUNFT (SCHWEIZ VS. AUSLAND) ---')
-    print(f"Schweizer {delikte_total_schweizer_auslaender[0]} und Ausländer: {delikte_total_schweizer_auslaender[1]} | Ratio: {ratio}")
-
+    print(f"Schweiz: {delikte_total_schweizer_auslaender[0]} | Ausland: {delikte_total_schweizer_auslaender[1]}")
+    print(f"→ Die Ratio beträgt ca. {ratio:.1f} : 1")
+    
 def main() -> None:
     df_2024 = get_processed_csv_2024()
 
     straftaten_anzahl = list(df_2024['Straftaten'].to_dict().items())
     haeufigste_straftaten(straftaten_anzahl)
 
-    totale_anzahl_delikte_pro_altersgruppe = list(df_2024[['<10', '10-14', '15-17', '18, 19','20-24', '25-29', '30-34', '35-39', '40-49', '50-59', '60-69', '70+']].sum().to_dict().items())
+    totale_anzahl_delikte_pro_altersgruppe = list(df_2024[['<10', '10-14', '15-17', '18-19','20-24', '25-29', '30-34', '35-39', '40-49', '50-59', '60-69', '70+']].sum().to_dict().items())
     totale_anzahl_delikte_value = totale_delikte(totale_anzahl_delikte_pro_altersgruppe)
 
     # Wir nutzen totale_anzahl_delikte von zuvor, um den prozentualen Anteil auszurechnen. String formatting findet auch gleich in der lambda Funktion statt.
